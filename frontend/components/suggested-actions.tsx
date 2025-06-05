@@ -20,8 +20,8 @@ function PureSuggestedActions({
   const suggestedActions = [
     {
       title: 'Which providers include',
-      label: 'auto-pay discounts, and how much?',
-      action: 'Which providers include auto-pay discounts, and how much?',
+      label: 'auto pay discounts, and how much. Show all?',
+      action: 'Which providers include auto pay discounts, and how much. Show all?',
     },
     {
       title: 'Who has the best deal',
