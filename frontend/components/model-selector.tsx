@@ -30,7 +30,9 @@ export function ModelSelector({
     useOptimistic(selectedModelId);
 
   const userType = session.user.type;
-  const { availableChatModelIds } = entitlementsByUserType[userType];
+  // Fallback to 'regular' for unknown user types (like 'credentials')
+  const entitlements = entitlementsByUserType[userType] || entitlementsByUserType['regular'];
+  const { availableChatModelIds } = entitlements;
 
   const availableChatModels = chatModels.filter((chatModel) =>
     availableChatModelIds.includes(chatModel.id),

@@ -55,23 +55,32 @@ export const login = async (
     console.log('📊 Login result:', result);
     console.log('🔍 Login result type:', typeof result);
     console.log('🔍 Login result keys:', result ? Object.keys(result) : 'null');
-    console.log('🔍 Has error?', !!result?.error);
-    console.log('🔍 Has url?', !!result?.url);
-    console.log('🔍 Has ok?', !!result?.ok);
 
-    if (result?.error) {
-      console.log('❌ Login failed:', result.error);
-      return { status: 'failed' };
-    }
-
-    // NextAuth returns URL on success when redirect: false
-    if (result?.url || result?.ok) {
-      console.log('✅ ACTIONS.TS: Login successful! Returning success status...');
+    // 1. Handle the expected successful object response
+    if (result && typeof result === 'object' && result.ok === true) {
+      console.log('✅ ACTIONS.TS: Standard success path - signIn returned object with ok: true');
       return { status: 'success' };
     }
-
-    console.log('❌ ACTIONS.TS: No success indicators found, returning failed');
-    return { status: 'failed' };
+    
+    // 2. Handle the OBSERVED ANOMALY: signIn returns a URL string on (backend) success
+    // Based on console analysis, backend authentication IS successful when this string is returned
+    else if (typeof result === 'string' && (result.startsWith('http://') || result.startsWith('https://'))) {
+      console.log('✅ ACTIONS.TS: NextAuth returned URL string - interpreting as success based on backend confirmation');
+      console.log('🎯 ACTIONS.TS: URL result:', result);
+      return { status: 'success' };
+    }
+    
+    // 3. Handle the expected error object response
+    else if (result && typeof result === 'object' && result.error) {
+      console.log('❌ ACTIONS.TS: NextAuth returned error object:', result.error);
+      return { status: 'failed' };
+    }
+    
+    // 4. Fallback for any other unexpected results
+    else {
+      console.log('❌ ACTIONS.TS: Unexpected signIn result structure:', result);
+      return { status: 'failed' };
+    }
   } catch (error) {
     console.error('💥 Login error:', error);
     if (error instanceof z.ZodError) {
@@ -134,19 +143,32 @@ export const register = async (
     });
 
     console.log('📊 Auto sign-in result:', result);
+    console.log('🔍 Auto sign-in result type:', typeof result);
 
-    if (result?.error) {
-      console.log('❌ Auto sign-in failed:', result.error);
-      return { status: 'failed' };
-    }
-
-    // NextAuth returns URL on success when redirect: false  
-    if (result?.url || result?.ok) {
-      console.log('✅ Registration and auto sign-in successful!');
+    // 1. Handle the expected successful object response
+    if (result && typeof result === 'object' && result.ok === true) {
+      console.log('✅ REGISTRATION: Standard success path - signIn returned object with ok: true');
       return { status: 'success' };
     }
-
-    return { status: 'failed' };
+    
+    // 2. Handle the OBSERVED ANOMALY: signIn returns a URL string on (backend) success
+    else if (typeof result === 'string' && (result.startsWith('http://') || result.startsWith('https://'))) {
+      console.log('✅ REGISTRATION: NextAuth returned URL string - interpreting as success based on backend confirmation');
+      console.log('🎯 REGISTRATION: URL result:', result);
+      return { status: 'success' };
+    }
+    
+    // 3. Handle the expected error object response
+    else if (result && typeof result === 'object' && result.error) {
+      console.log('❌ REGISTRATION: Auto sign-in failed:', result.error);
+      return { status: 'failed' };
+    }
+    
+    // 4. Fallback for any other unexpected results
+    else {
+      console.log('❌ REGISTRATION: Unexpected auto sign-in result structure:', result);
+      return { status: 'failed' };
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { status: 'invalid_data' };

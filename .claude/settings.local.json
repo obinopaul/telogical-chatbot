@@ -1,3 +1,15 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(cp:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)"
+    ]
+  },
   "enableAllProjectMcpServers": false
 }
