@@ -53,17 +53,24 @@ export const login = async (
     });
 
     console.log('📊 Login result:', result);
+    console.log('🔍 Login result type:', typeof result);
+    console.log('🔍 Login result keys:', result ? Object.keys(result) : 'null');
+    console.log('🔍 Has error?', !!result?.error);
+    console.log('🔍 Has url?', !!result?.url);
+    console.log('🔍 Has ok?', !!result?.ok);
 
     if (result?.error) {
       console.log('❌ Login failed:', result.error);
       return { status: 'failed' };
     }
 
-    if (result?.ok) {
-      console.log('✅ Login successful!');
+    // NextAuth returns URL on success when redirect: false
+    if (result?.url || result?.ok) {
+      console.log('✅ ACTIONS.TS: Login successful! Returning success status...');
       return { status: 'success' };
     }
 
+    console.log('❌ ACTIONS.TS: No success indicators found, returning failed');
     return { status: 'failed' };
   } catch (error) {
     console.error('💥 Login error:', error);
@@ -133,7 +140,8 @@ export const register = async (
       return { status: 'failed' };
     }
 
-    if (result?.ok) {
+    // NextAuth returns URL on success when redirect: false  
+    if (result?.url || result?.ok) {
       console.log('✅ Registration and auto sign-in successful!');
       return { status: 'success' };
     }

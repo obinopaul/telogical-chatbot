@@ -30,7 +30,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - AUTH_SECRET=random_secret_string_here
+      - NEXTAUTH_SECRET="4hSUkYr9kcpJx0Zl2DnC6bVXzDUyDTsOOGtM8SpZj7E="
+      - NEXTAUTH_URL=http://localhost:3000
       - USE_TELOGICAL_BACKEND=true
       - TELOGICAL_API_URL=http://backend:8081
       - POSTGRES_URL=postgres://citus:1stAsTradgedyThenAsFarce@c-telogical-postgresql-eus.7n7rqafletob6o.postgres.cosmos.azure.com:5432/citus
@@ -40,7 +41,7 @@ services:
     volumes:
       - ../frontend:/app
       - frontend_node_modules:/app/node_modules
-      - ../docker/mock-auth.ts:/app/docker/mock-auth.ts
+      - ../docker/postgresql-auth.ts:/app/docker/postgresql-auth.ts
     depends_on:
       backend:
         condition: service_healthy
