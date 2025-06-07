@@ -87,8 +87,8 @@ function PureChatHeader({
             <Image
               src={theme === 'dark' ? '/logo_white.png' : '/logo.png'}
               alt="Telogical Logo"
-              width={100}
-              height={100}
+              width={80}
+              height={80}
               className="object-contain"
             />
             <span className="sr-only">New Chat</span>
