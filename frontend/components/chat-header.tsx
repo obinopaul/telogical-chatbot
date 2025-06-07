@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
 import Image from 'next/image';
+import { useTheme } from 'next-themes';
 
 import { ModelSelector } from '@/components/model-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
@@ -30,6 +31,7 @@ function PureChatHeader({
 }) {
   const router = useRouter();
   const { open } = useSidebar();
+  const { theme } = useTheme();
 
   const { width: windowWidth } = useWindowSize();
 
@@ -83,10 +85,10 @@ function PureChatHeader({
             }}
           >
             <Image
-              src="/logo.png"
+              src={theme === 'dark' ? '/logo_white.png' : '/logo.png'}
               alt="Telogical Logo"
-              width={60}
-              height={60}
+              width={100}
+              height={100}
               className="object-contain"
             />
             <span className="sr-only">New Chat</span>
