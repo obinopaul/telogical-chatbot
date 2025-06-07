@@ -114,7 +114,7 @@ export const {
             .where(eq(user.email, authUser.email!));
 
           if (existingUsers.length === 0) {
-            // Create new user for Google OAuth - this happens for BOTH sign-in and create-account
+            // Create new user for Google OAuth
             console.log('🆕 POSTGRESQL-AUTH: Creating new Google user:', authUser.email);
             const newUserId = crypto.randomUUID();
             try {
@@ -125,16 +125,12 @@ export const {
                 image: authUser.image,
               });
               console.log('✅ POSTGRESQL-AUTH: Successfully created Google user with ID:', newUserId);
-              // Set the authUser.id to the new database ID for immediate use
-              authUser.id = newUserId;
             } catch (createError) {
               console.error('💥 POSTGRESQL-AUTH: Failed to create Google user:', createError);
-              return false; // Reject sign-in if we can't create the user
+              return false;
             }
           } else {
             console.log('👤 POSTGRESQL-AUTH: Google user already exists:', authUser.email);
-            // Set the authUser.id to the existing database ID
-            authUser.id = existingUsers[0].id;
           }
         } catch (error) {
           console.error('💥 POSTGRESQL-AUTH: Error handling Google sign-in:', error);
@@ -178,6 +174,7 @@ export const {
         console.log('📋 POSTGRESQL-AUTH: Session callback for:', session.user.email);
         session.user.id = token.id as string;
         session.user.type = token.type as string;
+        console.log('📋 POSTGRESQL-AUTH: Session user ID:', session.user.id);
       }
       return session;
     },

@@ -114,16 +114,27 @@ export const {
             .where(eq(user.email, authUser.email!));
 
           if (existingUsers.length === 0) {
-            // Create new user for Google OAuth
+            // Create new user for Google OAuth - this happens for BOTH sign-in and create-account
             console.log('🆕 POSTGRESQL-AUTH: Creating new Google user:', authUser.email);
-            await db.insert(user).values({
-              id: crypto.randomUUID(),
-              email: authUser.email!,
-              name: authUser.name || authUser.email!.split('@')[0],
-              image: authUser.image,
-            });
+            const newUserId = crypto.randomUUID();
+            try {
+              await db.insert(user).values({
+                id: newUserId,
+                email: authUser.email!,
+                name: authUser.name || authUser.email!.split('@')[0],
+                image: authUser.image,
+              });
+              console.log('✅ POSTGRESQL-AUTH: Successfully created Google user with ID:', newUserId);
+              // Set the authUser.id to the new database ID for immediate use
+              authUser.id = newUserId;
+            } catch (createError) {
+              console.error('💥 POSTGRESQL-AUTH: Failed to create Google user:', createError);
+              return false; // Reject sign-in if we can't create the user
+            }
           } else {
             console.log('👤 POSTGRESQL-AUTH: Google user already exists:', authUser.email);
+            // Set the authUser.id to the existing database ID
+            authUser.id = existingUsers[0].id;
           }
         } catch (error) {
           console.error('💥 POSTGRESQL-AUTH: Error handling Google sign-in:', error);
@@ -136,7 +147,28 @@ export const {
     async jwt({ token, user: authUser, account }) {
       if (authUser) {
         console.log('🎫 POSTGRESQL-AUTH: JWT callback - setting token for:', authUser.email);
-        token.id = authUser.id;
+        
+        // For Google OAuth, fetch the user ID from database
+        if (account?.provider === 'google' && authUser.email) {
+          try {
+            const users = await db
+              .select()
+              .from(user)
+              .where(eq(user.email, authUser.email));
+            
+            if (users.length > 0) {
+              token.id = users[0].id;
+              console.log('✅ POSTGRESQL-AUTH: Set JWT token ID from database:', users[0].id);
+            } else {
+              console.error('❌ POSTGRESQL-AUTH: User not found in database for JWT:', authUser.email);
+            }
+          } catch (error) {
+            console.error('💥 POSTGRESQL-AUTH: Error fetching user for JWT:', error);
+          }
+        } else {
+          token.id = authUser.id;
+        }
+        
         token.type = authUser.type || account?.provider || 'google';
       }
       return token;

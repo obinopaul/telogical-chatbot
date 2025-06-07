@@ -76,7 +76,7 @@ function PureChatHeader({
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
-            className="hover:bg-zinc-100 dark:hover:bg-zinc-800 hidden md:flex py-1.5 px-2 h-fit md:h-[34px] order-4 md:ml-auto"
+            className="hover:bg-zinc-100 dark:hover:bg-zinc-800 hidden md:flex py-2 px-3 h-fit md:h-[68px] order-4 md:ml-auto"
             onClick={() => {
               router.push('/');
               router.refresh();
@@ -85,8 +85,8 @@ function PureChatHeader({
             <Image
               src="/logo.png"
               alt="Telogical Logo"
-              width={38}
-              height={38}
+              width={60}
+              height={60}
               className="object-contain"
             />
             <span className="sr-only">New Chat</span>
