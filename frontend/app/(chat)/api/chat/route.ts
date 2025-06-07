@@ -39,10 +39,22 @@ export async function POST(request: Request) {
     // Create chat if it doesn't exist
     const chat = await getChatById({ id });
     if (!chat) {
+      // Extract user question for title generation
+      const userQuestion = Array.isArray(message.parts) ? 
+        message.parts.map(p => p.text || p).join('') : 
+        message.content;
+      
+      // Generate title from first user message (max 50 characters)
+      const chatTitle = userQuestion && userQuestion.length > 0
+        ? (userQuestion.length > 50 
+          ? userQuestion.substring(0, 47) + "..." 
+          : userQuestion)
+        : "New Chat";
+      
       await saveChat({
         id,
         userId: session.user.id,
-        title: "New Chat",
+        title: chatTitle,
         visibility: selectedVisibilityType || 'private',
       });
     }
@@ -129,18 +141,42 @@ export async function POST(request: Request) {
         content: Array.isArray(msg.parts) ? msg.parts.map(p => p.text || p).join('') : msg.parts,
       }));
 
-    // Direct call to your backend
-    const backendResponse = await fetch('http://backend:8081/telogical-assistant/stream', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: Array.isArray(message.parts) ? message.parts.map(p => p.text || p).join('') : message.content,
-        agent_config: {
-          message_history: backendMessages.slice(0, -1),
-          show_reasoning: true
+    // Direct call to your backend with retry logic for rate limiting
+    const makeBackendRequest = async (attempt = 1, maxRetries = 3): Promise<Response> => {
+      try {
+        const backendResponse = await fetch('http://backend:8081/telogical-assistant/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: Array.isArray(message.parts) ? message.parts.map(p => p.text || p).join('') : message.content,
+            agent_config: {
+              message_history: backendMessages.slice(0, -1),
+              show_reasoning: true
+            }
+          })
+        });
+
+        // If rate limited (429), retry with exponential backoff
+        if (backendResponse.status === 429 && attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+          console.log(`🔄 Rate limited (429), retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          return makeBackendRequest(attempt + 1, maxRetries);
         }
-      })
-    });
+
+        return backendResponse;
+      } catch (error) {
+        if (attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt) * 1000;
+          console.log(`🔄 Request failed, retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          return makeBackendRequest(attempt + 1, maxRetries);
+        }
+        throw error;
+      }
+    };
+
+    const backendResponse = await makeBackendRequest();
 
     if (!backendResponse.ok) {
       throw new Error(`Backend error: ${backendResponse.statusText}`);
