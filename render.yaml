@@ -96,19 +96,13 @@ services:
       - key: NEXTAUTH_SECRET
         generateValue: true
       - key: NEXTAUTH_URL
-        fromService:
-          type: web
-          name: telogical-frontend
-          property: url
+        sync: false
       
       # Backend Connection
       - key: USE_TELOGICAL_BACKEND
         value: true
       - key: TELOGICAL_API_URL
-        fromService:
-          type: web
-          name: telogical-backend
-          property: url
+        sync: false
       
       # Database Connection
       - key: POSTGRES_URL
@@ -139,7 +133,12 @@ services:
 # - LANGCHAIN_API_KEY: your-langsmith-api-key (optional)
 #
 # Frontend Service:
+# - NEXTAUTH_URL: https://telogical-frontend.onrender.com (your frontend URL)
+# - TELOGICAL_API_URL: https://telogical-backend.onrender.com (your backend URL)
 # - GOOGLE_CLIENT_ID: your-google-oauth-client-id
 # - GOOGLE_CLIENT_SECRET: your-google-oauth-client-secret
 #
-# Don't forget to update Google OAuth settings with your Render URLs!
+# IMPORTANT: After deployment, get the actual URLs from Render dashboard and update:
+# - NEXTAUTH_URL with your frontend service URL
+# - TELOGICAL_API_URL with your backend service URL
+# - Update Google OAuth settings with your Render URLs!
