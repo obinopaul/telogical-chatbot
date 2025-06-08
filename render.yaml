@@ -1,0 +1,145 @@
+# Render Blueprint for Telogical Chatbot
+# This file enables one-click deployment to Render
+# 
+# To deploy:
+# 1. Push this file to your GitHub repository
+# 2. Go to https://dashboard.render.com
+# 3. Click "New" -> "Blueprint"
+# 4. Connect your GitHub repository
+# 5. Render will create all services automatically
+# 6. Set the secret environment variables in each service dashboard
+
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: telogical-database
+    plan: starter
+    databaseName: telogical_prod
+    user: telogical_user
+    region: oregon
+
+  # Backend Service (Python FastAPI)
+  - type: web
+    name: telogical-backend
+    env: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./docker/Dockerfile.backend
+    envVars:
+      # Database Connection
+      - key: DATABASE_TYPE
+        value: postgres
+      - key: POSTGRES_URL
+        fromDatabase:
+          name: telogical-database
+          property: connectionString
+      
+      # Server Configuration
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: MODE
+        value: production
+      
+      # AI API Keys (MUST be set manually in Render dashboard)
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT_MAP
+        sync: false
+      
+      # Telogical API Configuration
+      - key: TELOGICAL_AUTH_TOKEN
+        sync: false
+      - key: TELOGICAL_GRAPHQL_ENDPOINT
+        value: https://residential-api.telogical.com/graphql
+      - key: TELOGICAL_AUTH_TOKEN_2
+        sync: false
+      - key: TELOGICAL_GRAPHQL_ENDPOINT_2
+        value: https://llmapi.telogical.com/graphql
+      - key: TELOGICAL_LOCALE
+        value: us-en
+      
+      # Data Files
+      - key: ZIP_CODE_CSV_PATH
+        value: data/geo-data.csv
+      - key: DMA_CSV_PATH
+        value: data/DMAs.csv
+      
+      # Security
+      - key: AUTH_SECRET
+        generateValue: true
+      
+      # Monitoring (Optional)
+      - key: LANGCHAIN_TRACING_V2
+        value: true
+      - key: LANGCHAIN_API_KEY
+        sync: false
+      - key: LANGCHAIN_PROJECT
+        value: telogical-render-production
+
+  # Frontend Service (Next.js)
+  - type: web
+    name: telogical-frontend
+    env: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./docker/Dockerfile.frontend
+    envVars:
+      # Authentication
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_URL
+        fromService:
+          type: web
+          name: telogical-frontend
+          property: url
+      
+      # Backend Connection
+      - key: USE_TELOGICAL_BACKEND
+        value: true
+      - key: TELOGICAL_API_URL
+        fromService:
+          type: web
+          name: telogical-backend
+          property: url
+      
+      # Database Connection
+      - key: POSTGRES_URL
+        fromDatabase:
+          name: telogical-database
+          property: connectionString
+      
+      # Google OAuth (MUST be set manually in Render dashboard)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      
+      # Production Settings
+      - key: NODE_ENV
+        value: production
+
+# After deployment, manually set these environment variables in Render Dashboard:
+# 
+# Backend Service:
+# - OPENAI_API_KEY: your-openai-api-key
+# - ANTHROPIC_API_KEY: your-anthropic-api-key  
+# - AZURE_OPENAI_API_KEY: your-azure-openai-api-key
+# - AZURE_OPENAI_ENDPOINT: https://your-resource.openai.azure.com/
+# - AZURE_OPENAI_DEPLOYMENT_MAP: {"gpt-4o": "your-deployment-name"}
+# - TELOGICAL_AUTH_TOKEN: your-telogical-auth-token
+# - TELOGICAL_AUTH_TOKEN_2: your-telogical-auth-token-2
+# - LANGCHAIN_API_KEY: your-langsmith-api-key (optional)
+#
+# Frontend Service:
+# - GOOGLE_CLIENT_ID: your-google-oauth-client-id
+# - GOOGLE_CLIENT_SECRET: your-google-oauth-client-secret
+#
+# Don't forget to update Google OAuth settings with your Render URLs!

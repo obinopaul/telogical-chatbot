@@ -1,0 +1,101 @@
+# ===================================
+# PRODUCTION DOCKER COMPOSE CONFIGURATION
+# ===================================
+# This file is optimized for production deployment
+# Use: docker-compose -f docker/compose.production.yml up -d
+
+version: '3.8'
+
+services:
+  # Backend service
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "8081:8081"
+    env_file: 
+      - ../.env  # Load production environment variables
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8081
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgres}
+      - MODE=production
+    volumes:
+      - ../data:/app/data:ro  # Read-only data volume for production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # Frontend service
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Security
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      
+      # Backend connection
+      - USE_TELOGICAL_BACKEND=true
+      - TELOGICAL_API_URL=${TELOGICAL_API_URL:-http://backend:8081}
+      
+      # Database
+      - POSTGRES_URL=${POSTGRES_URL}
+      
+      # OAuth
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      
+      # Production settings
+      - NODE_ENV=production
+      - SKIP_DB_MIGRATION=${SKIP_DB_MIGRATION:-false}
+      - SKIP_AUTH_SETUP=${SKIP_AUTH_SETUP:-false}
+    
+    depends_on:
+      backend:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+networks:
+  default:
+    driver: bridge
+
+# Production deployment notes:
+# 1. Ensure all environment variables are set in your .env file
+# 2. Use proper secrets management for production credentials
+# 3. Consider using external managed database instead of containerized postgres
+# 4. Set up proper logging and monitoring
+# 5. Use reverse proxy (nginx/traefik) for SSL termination
+# 6. Consider using Docker Swarm or Kubernetes for orchestration

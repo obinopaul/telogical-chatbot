@@ -1,4 +1,5 @@
 import json
+import os
 from collections.abc import AsyncGenerator, Generator
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -25,13 +26,22 @@ class TelogicalClient(AgentClient):
 
     def __init__(
         self,
-        base_url: str = "http://0.0.0.0",
+        base_url: str = None,
         agent: str = "telogical-assistant",  # Default to the telogical assistant
         timeout: float | None = None,
         get_info: bool = True,
     ) -> None:
         """
         Initialize the Telogical client.
+        
+        Args:
+            base_url: Base URL for the Telogical API. If None, uses TELOGICAL_API_URL environment variable or defaults to http://0.0.0.0
+            agent: The agent type to use (default: telogical-assistant)
+            timeout: Request timeout in seconds
+            get_info: Whether to get server info on initialization
+        """
+        if base_url is None:
+            base_url = os.getenv("TELOGICAL_API_URL", "http://0.0.0.0")
 
         Args:
             base_url (str): The base URL of the agent service.

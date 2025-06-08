@@ -1,144 +1,86 @@
 # 🚀 **Deploying Telogical Chatbot to Render**
 
-This guide walks you through deploying your Telogical Chatbot to Render for production use.
+This guide walks you through deploying your complete Telogical Chatbot (frontend + backend) to Render using the production-ready Docker configuration.
 
 ## 📋 **Prerequisites**
 
 - ✅ **Render Account** - Sign up at [render.com](https://render.com)
-- ✅ **PostgreSQL Database** - Render PostgreSQL or external provider
+- ✅ **GitHub Repository** - Your Telogical project pushed to GitHub
 - ✅ **Google OAuth App** - For authentication
-- ✅ **Azure OpenAI** - For AI responses
-- ✅ **GitHub Repository** - Your Telogical project
+- ✅ **Production API Keys** - OpenAI, Azure OpenAI, Anthropic, etc.
+- ✅ **Domain Names** (Optional) - For custom domains
 
 ---
 
 ## 🎯 **Step 1: Prepare Your Repository**
 
-### **1.1 Create Build Scripts**
-Add to `frontend/package.json`:
-
-```json
-{
-  "scripts": {
-    "build": "next build",
-    "start": "next start",
-    "postinstall": "prisma generate || echo 'Prisma not configured'"
-  }
-}
+### **1.1 Verify Production Files**
+Ensure these files exist from the recent production preparation:
+```
+├── .env.production.example           # ← Backend environment template
+├── frontend/.env.production.example  # ← Frontend environment template
+├── docker/compose.production.yml     # ← Production Docker config
+├── requirements.txt                  # ← Updated with pinned versions
+├── DEPLOYMENT_READINESS.md          # ← Production readiness guide
 ```
 
-Add to `backend/requirements.txt`:
-```txt
-fastapi==0.104.1
-uvicorn==0.24.0
-python-dotenv==1.0.0
-openai==1.3.0
-psycopg2-binary==2.9.9
-pydantic==2.5.0
-httpx==0.25.2
-```
+### **1.2 Verify Render Blueprint**
+✅ **The `render.yaml` file is already created and ready!** No need to create it manually.
 
-### **1.2 Create Render Configuration**
-Create `render.yaml` in project root:
-
-```yaml
-services:
-  # Frontend Service
-  - type: web
-    name: telogical-frontend
-    env: node
-    plan: starter
-    buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NEXTAUTH_URL
-        fromService:
-          type: web
-          name: telogical-frontend
-          property: url
-      - key: POSTGRES_URL
-        fromDatabase:
-          name: telogical-db
-          property: connectionString
-      - key: NEXTAUTH_SECRET
-        generateValue: true
-      - key: USE_TELOGICAL_BACKEND
-        value: true
-      - key: TELOGICAL_API_URL
-        fromService:
-          type: web
-          name: telogical-backend
-          property: url
-
-  # Backend Service  
-  - type: web
-    name: telogical-backend
-    env: python
-    plan: starter
-    buildCommand: cd backend && pip install -r requirements.txt
-    startCommand: cd backend && python -m uvicorn run_service:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: POSTGRES_URL
-        fromDatabase:
-          name: telogical-db
-          property: connectionString
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: AZURE_OPENAI_ENDPOINT
-        sync: false
-
-databases:
-  - name: telogical-db
-    plan: starter
-```
+The repository includes a complete Render blueprint at `render.yaml` with:
+- PostgreSQL database configuration
+- Backend service (Docker-based)  
+- Frontend service (Docker-based)
+- Auto-linked environment variables
+- Auto-generated secrets
 
 ---
 
 ## 🎯 **Step 2: Deploy to Render**
 
-### **2.1 Connect GitHub Repository**
-1. Go to [Render Dashboard](https://dashboard.render.com)
-2. Click **"New +"** → **"Blueprint"**
-3. Connect your GitHub repository
-4. Select the repository containing your Telogical project
+### **2.1 Using Blueprint (Recommended)**
+1. **The `render.yaml` file is already in your repository** ✅
+2. Push your code to GitHub (if not already done)
+3. Go to [Render Dashboard](https://dashboard.render.com)
+4. Click **"New"** → **"Blueprint"**
+5. Connect your GitHub repository
+6. Render will automatically detect `render.yaml` and create all services
 
-### **2.2 Alternative: Manual Service Creation**
+### **2.2 Manual Service Creation (Alternative)**
 
-#### **Create PostgreSQL Database**
-1. Click **"New +"** → **"PostgreSQL"**
-2. Name: `telogical-db`
-3. Plan: **Starter** (free tier)
-4. Region: Choose closest to your users
-5. Click **"Create Database"**
+#### **A. Create PostgreSQL Database**
+1. **Render Dashboard** → **"New"** → **"PostgreSQL"**
+2. **Configuration:**
+   ```
+   Name: telogical-database
+   Database: telogical_prod
+   User: telogical_user
+   Region: Oregon (or your preferred region)
+   Plan: Starter ($7/month)
+   ```
 
-#### **Create Backend Service**
-1. Click **"New +"** → **"Web Service"**
-2. Connect your repository
-3. **Configuration:**
+#### **B. Create Backend Service**
+1. **Render Dashboard** → **"New"** → **"Web Service"**
+2. **Configuration:**
    ```
    Name: telogical-backend
-   Environment: Python
-   Region: Same as database
+   Repository: <your-github-repo>
+   Environment: Docker
+   Region: Oregon (same as database)
    Branch: main
-   Root Directory: backend
-   Build Command: pip install -r requirements.txt
-   Start Command: python -m uvicorn run_service:app --host 0.0.0.0 --port $PORT
+   Dockerfile Path: ./docker/Dockerfile.backend
    ```
 
-#### **Create Frontend Service**
-1. Click **"New +"** → **"Web Service"**
-2. Connect your repository
-3. **Configuration:**
+#### **C. Create Frontend Service**
+1. **Render Dashboard** → **"New"** → **"Web Service"**
+2. **Configuration:**
    ```
    Name: telogical-frontend
-   Environment: Node
-   Region: Same as backend
+   Repository: <your-github-repo>
+   Environment: Docker
+   Region: Oregon (same as backend)
    Branch: main
-   Root Directory: frontend
-   Build Command: npm install && npm run build
-   Start Command: npm start
+   Dockerfile Path: ./docker/Dockerfile.frontend
    ```
 
 ---
@@ -146,75 +88,96 @@ databases:
 ## 🎯 **Step 3: Configure Environment Variables**
 
 ### **3.1 Backend Environment Variables**
-In your backend service settings:
+In **Backend Service Settings** → **Environment**:
 
-| Variable | Value | Notes |
-|----------|-------|-------|
-| `POSTGRES_URL` | `postgresql://user:pass@host:5432/db` | From database |
-| `OPENAI_API_KEY` | `your-openai-api-key` | Azure OpenAI key |
-| `AZURE_OPENAI_ENDPOINT` | `https://your-resource.openai.azure.com/` | Azure endpoint |
-| `AZURE_OPENAI_API_VERSION` | `2024-12-01-preview` | API version |
-| `HOST` | `0.0.0.0` | Required for Render |
-| `PORT` | `$PORT` | Render auto-assigns |
+| Variable | Value | Source |
+|----------|-------|---------|
+| `DATABASE_TYPE` | `postgres` | Manual |
+| `POSTGRES_URL` | `postgres://user:pass@host:5432/db` | From Database |
+| `HOST` | `0.0.0.0` | Manual |
+| `PORT` | `10000` | Manual |
+| `MODE` | `production` | Manual |
+| `OPENAI_API_KEY` | `your-openai-api-key` | Manual (Secret) |
+| `ANTHROPIC_API_KEY` | `your-anthropic-api-key` | Manual (Secret) |
+| `AZURE_OPENAI_API_KEY` | `your-azure-openai-api-key` | Manual (Secret) |
+| `AZURE_OPENAI_ENDPOINT` | `https://your-resource.openai.azure.com/` | Manual |
+| `AZURE_OPENAI_DEPLOYMENT_MAP` | `{"gpt-4o": "your-deployment"}` | Manual |
+| `TELOGICAL_AUTH_TOKEN` | `your-telogical-token` | Manual (Secret) |
+| `TELOGICAL_AUTH_TOKEN_2` | `your-telogical-token-2` | Manual (Secret) |
+| `AUTH_SECRET` | `your-secure-random-string` | Manual (Secret) |
 
 ### **3.2 Frontend Environment Variables**
-In your frontend service settings:
+In **Frontend Service Settings** → **Environment**:
 
-| Variable | Value | Notes |
-|----------|-------|-------|
-| `POSTGRES_URL` | `postgresql://user:pass@host:5432/db` | Same as backend |
-| `NEXTAUTH_URL` | `https://your-app.onrender.com` | Your frontend URL |
-| `NEXTAUTH_SECRET` | `your-32-character-random-string` | Generate securely |
-| `GOOGLE_CLIENT_ID` | `your-google-client-id` | From Google Console |
-| `GOOGLE_CLIENT_SECRET` | `your-google-client-secret` | From Google Console |
-| `USE_TELOGICAL_BACKEND` | `true` | Enable backend |
-| `TELOGICAL_API_URL` | `https://your-backend.onrender.com` | Backend URL |
+| Variable | Value | Source |
+|----------|-------|---------|
+| `NEXTAUTH_SECRET` | `your-32-char-secret` | Manual (Secret) |
+| `NEXTAUTH_URL` | `https://telogical-frontend.onrender.com` | From Service URL |
+| `USE_TELOGICAL_BACKEND` | `true` | Manual |
+| `TELOGICAL_API_URL` | `https://telogical-backend.onrender.com` | From Backend Service |
+| `POSTGRES_URL` | `postgres://user:pass@host:5432/db` | From Database |
+| `GOOGLE_CLIENT_ID` | `your-google-client-id` | Manual |
+| `GOOGLE_CLIENT_SECRET` | `your-google-client-secret` | Manual (Secret) |
+| `NODE_ENV` | `production` | Manual |
 
 ---
 
 ## 🎯 **Step 4: Database Setup**
 
-### **4.1 Get Database Connection String**
-1. Go to your PostgreSQL database in Render
+### **4.1 Get Database Connection**
+1. Go to your **PostgreSQL service** in Render
 2. Copy the **"External Connection String"**
-3. Format: `postgresql://user:password@host:5432/database`
+3. Format: `postgres://user:password@host:5432/database`
 
-### **4.2 Run Database Migrations**
+### **4.2 Initialize Database Schema**
 Connect to your database and run:
 
 ```sql
--- Create User table
+-- Create User table for authentication
 CREATE TABLE IF NOT EXISTS "User" (
   id VARCHAR PRIMARY KEY,
-  email VARCHAR(128) UNIQUE NOT NULL,
-  password VARCHAR(64),
-  name VARCHAR(128),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255),
+  name VARCHAR(255),
   image TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
+  "createdAt" TIMESTAMP DEFAULT NOW()
 );
 
--- Create Chat table
+-- Create Chat table for conversation history
 CREATE TABLE IF NOT EXISTS "Chat" (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "createdAt" TIMESTAMP NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
   title TEXT NOT NULL,
-  "userId" UUID NOT NULL REFERENCES "User"(id),
+  "userId" VARCHAR NOT NULL REFERENCES "User"(id),
   visibility VARCHAR DEFAULT 'private'
 );
 
--- Add other tables as needed...
+-- Create Message table for chat messages
+CREATE TABLE IF NOT EXISTS "Message" (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "chatId" UUID NOT NULL REFERENCES "Chat"(id),
+  role VARCHAR NOT NULL,
+  content TEXT NOT NULL,
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+
+-- Add indexes for performance
+CREATE INDEX IF NOT EXISTS idx_user_email ON "User"(email);
+CREATE INDEX IF NOT EXISTS idx_chat_user_id ON "Chat"("userId");
+CREATE INDEX IF NOT EXISTS idx_chat_created_at ON "Chat"("createdAt");
+CREATE INDEX IF NOT EXISTS idx_message_chat_id ON "Message"("chatId");
 ```
 
-### **4.3 Create Master User**
+### **4.3 Create Test User (Optional)**
 ```sql
-INSERT INTO "User" (id, email, password, name, created_at)
+-- Create a test user for initial testing
+INSERT INTO "User" (id, email, name, "createdAt")
 VALUES (
-  '00000000-0000-0000-0000-000000000001',
-  'master@telogical.com',
-  'd77f599ed8ab508114bfcd6ffeeef69122f54c1239daade578d6404950a04ec3',
-  'Master Admin User',
+  'test-user-001',
+  'test@telogical.com',
+  'Test User',
   NOW()
-);
+) ON CONFLICT (email) DO NOTHING;
 ```
 
 ---
@@ -224,14 +187,16 @@ VALUES (
 ### **5.1 Update Google Console**
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Navigate to **APIs & Services** → **Credentials**
-3. Edit your OAuth 2.0 Client
-4. Add Authorized Redirect URLs:
+3. Edit your OAuth 2.0 Client ID
+4. **Authorized JavaScript Origins:**
    ```
-   https://your-app.onrender.com/api/auth/callback/google
+   https://telogical-frontend.onrender.com
+   https://your-custom-domain.com  (if using custom domain)
    ```
-5. Add Authorized JavaScript Origins:
+5. **Authorized Redirect URIs:**
    ```
-   https://your-app.onrender.com
+   https://telogical-frontend.onrender.com/api/auth/callback/google
+   https://your-custom-domain.com/api/auth/callback/google  (if using custom domain)
    ```
 
 ---
@@ -239,106 +204,181 @@ VALUES (
 ## 🎯 **Step 6: Deploy and Monitor**
 
 ### **6.1 Trigger Deployment**
-1. Push changes to your main branch
-2. Render will automatically deploy both services
-3. Monitor build logs in Render Dashboard
+1. **Push changes** to your main branch
+2. **Render will automatically deploy** both services
+3. **Monitor build logs** in each service dashboard
 
 ### **6.2 Check Service Health**
-- ✅ **Backend**: Visit `https://your-backend.onrender.com/health`
-- ✅ **Frontend**: Visit `https://your-frontend.onrender.com`
-- ✅ **Database**: Check connection in logs
+Once deployed, verify:
 
-### **6.3 Test Full Functionality**
-- ✅ **Authentication**: Test login/registration
-- ✅ **Chat**: Send messages and receive responses
-- ✅ **Database**: Verify chat history persistence
-- ✅ **Caching**: Test response caching
+#### **Backend Health Check**
+```bash
+curl https://telogical-backend.onrender.com/health
+# Should return: {"status": "healthy"}
+```
+
+#### **Frontend Health Check**
+```bash
+curl https://telogical-frontend.onrender.com/api/health
+# Should return: {"status": "ok"}
+```
+
+### **6.3 Test Full Application**
+Visit `https://telogical-frontend.onrender.com` and test:
+
+- ✅ **Page loads** without errors
+- ✅ **Google OAuth login** works
+- ✅ **Chat interface** displays correctly
+- ✅ **Send message** and receive AI response
+- ✅ **Chat history** persists in database
 
 ---
 
 ## 🛠️ **Troubleshooting**
 
-### **Common Issues:**
+### **Build Failures**
 
-#### **Build Failures**
+#### **Backend Build Issues**
 ```bash
-# Check build logs in Render Dashboard
-# Verify package.json and requirements.txt
-# Ensure all dependencies are listed
+# Common fixes:
+- Check requirements.txt has all dependencies
+- Verify Dockerfile.backend exists and is correct
+- Check for Python version compatibility
+- Review build logs for specific error messages
 ```
 
-#### **Service Connection Issues**
+#### **Frontend Build Issues**
 ```bash
-# Verify service URLs in environment variables
-# Check internal service communication
-# Ensure services are in same region
+# Common fixes:
+- Verify all environment variables are set
+- Check that TELOGICAL_API_URL points to backend service
+- Ensure POSTGRES_URL is correct
+- Review Next.js build logs
+```
+
+### **Service Connection Issues**
+
+#### **Frontend Can't Connect to Backend**
+```bash
+# Verify these settings:
+✓ TELOGICAL_API_URL in frontend matches backend URL
+✓ Backend service is running and healthy
+✓ Both services are in the same region
+✓ No CORS issues (check backend logs)
 ```
 
 #### **Database Connection Issues**
 ```bash
-# Verify POSTGRES_URL format
-# Check database service status
-# Test connection from service logs
+# Check these settings:
+✓ POSTGRES_URL format is correct
+✓ Database service is running
+✓ Connection string includes SSL options if required
+✓ Database allows connections from Render IPs
 ```
 
-#### **Authentication Problems**
+### **Authentication Problems**
 ```bash
-# Verify NEXTAUTH_URL matches frontend domain
-# Check Google OAuth redirect URLs
-# Ensure NEXTAUTH_SECRET is set
+# Verify these settings:
+✓ NEXTAUTH_URL matches your frontend domain
+✓ NEXTAUTH_SECRET is set and 32+ characters
+✓ Google OAuth redirect URLs are correct
+✓ User table exists in database
 ```
 
 ---
 
-## 📊 **Performance Optimization**
+## 📊 **Performance & Scaling**
 
 ### **7.1 Service Plans**
-For production, consider upgrading:
-- **Starter Plan**: Free tier with limitations
-- **Standard Plan**: Better performance and uptime
-- **Pro Plan**: High-performance applications
+Consider upgrading for production:
+- **Starter Plan**: $7/month - 512MB RAM, shared CPU
+- **Standard Plan**: $25/month - 2GB RAM, dedicated CPU
+- **Pro Plan**: $85/month - 8GB RAM, high performance
 
-### **7.2 Database Optimization**
-```sql
--- Add indexes for better performance
-CREATE INDEX idx_user_email ON "User"(email);
-CREATE INDEX idx_chat_user_id ON "Chat"("userId");
-CREATE INDEX idx_chat_created_at ON "Chat"("createdAt");
-```
+### **7.2 Database Scaling**
+- **Starter**: $7/month - 1GB storage, 97 connections
+- **Standard**: $20/month - 10GB storage, 197 connections
+- **Pro**: $65/month - 50GB storage, 297 connections
 
-### **7.3 Caching Strategy**
-Enable caching in your application:
-```typescript
-// Add Redis cache if needed
-// Use Render Redis add-on
+### **7.3 Monitoring Setup**
+```bash
+# Enable logging in Render Dashboard:
+- Service metrics and uptime
+- Build and deployment logs
+- Database connection monitoring
+- Error rate tracking
 ```
 
 ---
 
-## 🎯 **Step 7: Custom Domain (Optional)**
+## 🎯 **Step 8: Custom Domain (Optional)**
 
-### **7.1 Add Custom Domain**
-1. Go to your frontend service
-2. Click **"Settings"** → **"Custom Domains"**
-3. Add your domain (e.g., `chat.yourdomain.com`)
-4. Configure DNS records as shown
+### **8.1 Add Custom Domain**
+1. **Frontend Service** → **Settings** → **Custom Domains**
+2. Add your domain (e.g., `chat.yourdomain.com`)
+3. **Configure DNS records** as instructed by Render
+4. **Update environment variables:**
+   ```bash
+   NEXTAUTH_URL=https://chat.yourdomain.com
+   ```
+5. **Update Google OAuth** with new domain
 
-### **7.2 SSL Certificate**
-Render automatically provides SSL certificates for custom domains.
+### **8.2 Backend Custom Domain (Optional)**
+1. **Backend Service** → **Settings** → **Custom Domains**
+2. Add API subdomain (e.g., `api.yourdomain.com`)
+3. **Update frontend environment:**
+   ```bash
+   TELOGICAL_API_URL=https://api.yourdomain.com
+   ```
+
+### **8.3 SSL Certificates**
+Render automatically provides SSL certificates for all custom domains.
 
 ---
 
-## 📈 **Monitoring and Scaling**
+## 📈 **Production Monitoring**
 
-### **8.1 Monitor Performance**
-- **Render Dashboard**: View metrics and logs
-- **Uptime Monitoring**: Set up alerts
-- **Performance**: Monitor response times
+### **8.1 Service Monitoring**
+Monitor these metrics in Render Dashboard:
+- **Response times** and error rates
+- **Memory usage** and CPU utilization
+- **Database connections** and query performance
+- **Uptime** and availability
 
-### **8.2 Scaling Options**
-- **Vertical Scaling**: Upgrade service plans
-- **Horizontal Scaling**: Add more service instances
-- **Database Scaling**: Upgrade PostgreSQL plan
+### **8.2 Application Logging**
+Set up structured logging:
+```python
+# Backend logging
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Log important events
+logger.info(f"User {user_id} started chat {chat_id}")
+```
+
+### **8.3 Alerts and Notifications**
+Configure alerts for:
+- Service downtime
+- High error rates
+- Database connection issues
+- Resource usage thresholds
+
+---
+
+## 💰 **Cost Estimation**
+
+### **Monthly Costs (Starter Plan)**
+- **Frontend Service**: $7/month
+- **Backend Service**: $7/month  
+- **PostgreSQL Database**: $7/month
+- **Total**: ~$21/month
+
+### **Monthly Costs (Production Plan)**
+- **Frontend Service**: $25/month (Standard)
+- **Backend Service**: $25/month (Standard)
+- **PostgreSQL Database**: $20/month (Standard)
+- **Total**: ~$70/month
 
 ---
 
@@ -346,16 +386,24 @@ Render automatically provides SSL certificates for custom domains.
 
 Your Telogical Chatbot is now live on Render!
 
-**URLs:**
-- **Frontend**: `https://your-frontend.onrender.com`
-- **Backend**: `https://your-backend.onrender.com`
+**Production URLs:**
+- **Frontend**: `https://telogical-frontend.onrender.com`
+- **Backend**: `https://telogical-backend.onrender.com`
 - **Database**: Managed PostgreSQL
 
+### **Architecture Overview:**
+```
+User → Render (Frontend) → Render (Backend) → AI APIs
+                         ↓
+                    Render PostgreSQL
+```
+
 ### **Next Steps:**
-- 🔒 **Set up monitoring** and alerts
-- 📊 **Optimize performance** based on usage
-- 🚀 **Scale services** as needed
-- 🔄 **Set up CI/CD** for automatic deployments
+- 🔒 **Monitor service health** and performance
+- 📊 **Set up alerts** for critical issues
+- 🚀 **Scale services** based on usage
+- 🔄 **Implement CI/CD** for automated deployments
+- 💾 **Set up backups** for database
 
 ---
 
@@ -364,12 +412,13 @@ Your Telogical Chatbot is now live on Render!
 **Render Resources:**
 - [Render Documentation](https://render.com/docs)
 - [Render Community](https://community.render.com)
-- [Render Status](https://status.render.com)
+- [Render Status Page](https://status.render.com)
 
-**Telogical Support:**
+**Application Issues:**
 - Check service logs in Render Dashboard
-- Verify environment variables
+- Verify all environment variables are correct
 - Test database connectivity
-- Review authentication settings
+- Review authentication configuration
+- Monitor resource usage and performance
 
 **Happy deploying!** 🚀

@@ -31,7 +31,7 @@ services:
       - "3000:3000"
     environment:
       - NEXTAUTH_SECRET="4hSUkYr9kcpJx0Zl2DnC6bVXzDUyDTsOOGtM8SpZj7E="
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - USE_TELOGICAL_BACKEND=true
       - TELOGICAL_API_URL=http://backend:8081
       - POSTGRES_URL=postgres://citus:1stAsTradgedyThenAsFarce@c-telogical-postgresql-eus.7n7rqafletob6o.postgres.cosmos.azure.com:5432/citus

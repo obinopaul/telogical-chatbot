@@ -144,7 +144,8 @@ export async function POST(request: Request) {
     // Direct call to your backend with retry logic for rate limiting
     const makeBackendRequest = async (attempt = 1, maxRetries = 3): Promise<Response> => {
       try {
-        const backendResponse = await fetch('http://backend:8081/telogical-assistant/stream', {
+        const backendUrl = process.env.TELOGICAL_API_URL || 'http://backend:8081';
+        const backendResponse = await fetch(`${backendUrl}/telogical-assistant/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "functions": {
+    "app/**/*": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["iad1"],
+  "env": {
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "NEXTAUTH_URL": "@nextauth_url", 
+    "POSTGRES_URL": "@postgres_url",
+    "USE_TELOGICAL_BACKEND": "true",
+    "TELOGICAL_API_URL": "@telogical_api_url",
+    "GOOGLE_CLIENT_ID": "@google_client_id",
+    "GOOGLE_CLIENT_SECRET": "@google_client_secret",
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NEXTAUTH_SECRET": "@nextauth_secret",
+      "NEXTAUTH_URL": "@nextauth_url",
+      "POSTGRES_URL": "@postgres_url",
+      "USE_TELOGICAL_BACKEND": "true",
+      "TELOGICAL_API_URL": "@telogical_api_url",
+      "GOOGLE_CLIENT_ID": "@google_client_id",
+      "GOOGLE_CLIENT_SECRET": "@google_client_secret",
+      "NODE_ENV": "production"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/auth/(.*)",
+      "destination": "/api/auth/$1"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+# Azure Backend Environment Variables
+# Edit these values with your actual production credentials before deployment
+
+# Database Configuration
+DATABASE_TYPE=postgres
+POSTGRES_URL=postgres://telogical_admin:YourSecurePassword123!@telogical-postgres.postgres.database.azure.com:5432/telogical_prod?sslmode=require
+
+# Server Configuration
+HOST=0.0.0.0
+PORT=8081
+MODE=production
+
+# AI API Keys - REPLACE WITH YOUR ACTUAL KEYS
+OPENAI_API_KEY=your-openai-api-key-here
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+AZURE_OPENAI_API_KEY=your-azure-openai-api-key-here
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT_MAP={"gpt-4o": "your-deployment-name", "gpt-4o-mini": "your-deployment-name"}
+
+# Telogical API Configuration - REPLACE WITH YOUR ACTUAL TOKENS
+TELOGICAL_AUTH_TOKEN=your-telogical-auth-token-here
+TELOGICAL_GRAPHQL_ENDPOINT=https://residential-api.telogical.com/graphql
+TELOGICAL_AUTH_TOKEN_2=your-telogical-auth-token-2-here
+TELOGICAL_GRAPHQL_ENDPOINT_2=https://llmapi.telogical.com/graphql
+TELOGICAL_LOCALE=us-en
+
+# Data Files
+ZIP_CODE_CSV_PATH=data/geo-data.csv
+DMA_CSV_PATH=data/DMAs.csv
+
+# Security - REPLACE WITH YOUR ACTUAL SECRET
+AUTH_SECRET=your-secure-random-string-32-chars-minimum
+
+# Monitoring (Optional)
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=your-langsmith-api-key-here
+LANGCHAIN_PROJECT=telogical-azure-production

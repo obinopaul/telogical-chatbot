@@ -9,7 +9,10 @@ This script demonstrates how to use the TelogicalClient to:
 4. Extract and display tool calls
 
 Usage:
-    python telogical_client_demo.py
+    python telogical_client_demo.py [--base-url URL]
+    
+Environment Variables:
+    TELOGICAL_API_URL: Base URL for the Telogical API (default: http://localhost:8081)
 """
 
 import asyncio
@@ -44,7 +47,9 @@ async def demo_streaming() -> None:
     print("\n=== TelogicalClient Streaming Demo ===\n")
     
     # Create client
-    client = TelogicalClient(base_url="http://localhost:8081")
+    # Use environment variable or default
+    base_url = os.getenv("TELOGICAL_API_URL", "http://localhost:8081")
+    client = TelogicalClient(base_url=base_url)
     print(f"Connected to service at {client.base_url}")
     print(f"Using agent: {client.agent}")
     
@@ -93,7 +98,9 @@ async def demo_reasoning_extraction() -> None:
     print("\n=== TelogicalClient Reasoning Extraction Demo ===\n")
     
     # Create client
-    client = TelogicalClient(base_url="http://localhost:8081")
+    # Use environment variable or default
+    base_url = os.getenv("TELOGICAL_API_URL", "http://localhost:8081")
+    client = TelogicalClient(base_url=base_url)
     
     # Get response with reasoning steps
     query = "What are Verizon's fiber internet options in New York City?"
@@ -124,7 +131,9 @@ async def demo_multi_turn_conversation() -> None:
     print("\n=== TelogicalClient Multi-turn Conversation Demo ===\n")
     
     # Create client
-    client = TelogicalClient(base_url="http://localhost:8081")
+    # Use environment variable or default
+    base_url = os.getenv("TELOGICAL_API_URL", "http://localhost:8081")
+    client = TelogicalClient(base_url=base_url)
     
     # Create thread ID
     thread_id = "demo-conversation-1"

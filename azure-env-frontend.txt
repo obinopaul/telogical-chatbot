@@ -1,0 +1,20 @@
+# Azure Frontend Environment Variables
+# Edit these values with your actual production credentials before deployment
+
+# Authentication - REPLACE WITH YOUR ACTUAL SECRETS
+NEXTAUTH_SECRET=your-32-character-random-secret-string-here
+NEXTAUTH_URL=https://telogical-frontend.eastus.azurecontainer.io:3000
+
+# Backend Connection (will be auto-updated by deployment script)
+USE_TELOGICAL_BACKEND=true
+TELOGICAL_API_URL=https://telogical-backend.eastus.azurecontainer.io:8081
+
+# Database Connection
+POSTGRES_URL=postgres://telogical_admin:YourSecurePassword123!@telogical-postgres.postgres.database.azure.com:5432/telogical_prod?sslmode=require
+
+# Google OAuth - REPLACE WITH YOUR ACTUAL CREDENTIALS
+GOOGLE_CLIENT_ID=your-google-oauth-client-id-here
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret-here
+
+# Production Settings
+NODE_ENV=production

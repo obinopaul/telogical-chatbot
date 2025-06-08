@@ -25,13 +25,22 @@ class AgentClient:
 
     def __init__(
         self,
-        base_url: str = "http://0.0.0.0",
+        base_url: str = None,
         agent: str | None = None,
         timeout: float | None = None,
         get_info: bool = True,
     ) -> None:
         """
         Initialize the client.
+        
+        Args:
+            base_url: Base URL for the agent API. If None, uses TELOGICAL_API_URL environment variable or defaults to http://0.0.0.0
+            agent: The agent type to use
+            timeout: Request timeout in seconds
+            get_info: Whether to get server info on initialization
+        """
+        if base_url is None:
+            base_url = os.getenv("TELOGICAL_API_URL", "http://0.0.0.0")
 
         Args:
             base_url (str): The base URL of the agent service.
