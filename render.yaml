@@ -9,14 +9,14 @@
 # 5. Render will create all services automatically
 # 6. Set the secret environment variables in each service dashboard
 
-services:
-  # PostgreSQL Database
-  - type: pserv
-    name: telogical-database
-    plan: starter
+databases:
+  - name: telogical-database
     databaseName: telogical_prod
     user: telogical_user
+    plan: starter
     region: oregon
+
+services:
 
   # Backend Service (Python FastAPI)
   - type: web
