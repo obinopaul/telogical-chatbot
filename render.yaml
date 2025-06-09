@@ -15,7 +15,7 @@ services:
   - type: web
     name: telogical-backend
     runtime: docker
-    plan: basic-256mb
+    plan: starter
     region: oregon
     dockerfilePath: ./docker/Dockerfile.backend
     healthCheckPath: /health
@@ -90,7 +90,7 @@ services:
   - type: web
     name: telogical-frontend
     runtime: docker
-    plan: basic-256mb
+    plan: starter
     region: oregon
     dockerfilePath: ./docker/Dockerfile.frontend
     envVars:
@@ -162,9 +162,9 @@ services:
 #    - Redirect URIs: https://telogical-frontend-XXXX.onrender.com/api/auth/callback/google
 #
 # 4. COST ESTIMATE:
-#    - Backend service (basic-256mb): $6/month  
-#    - Frontend service (basic-256mb): $6/month
-#    - Total: ~$12/month (using your existing database = $0)
+#    - Backend service (starter): $7/month  
+#    - Frontend service (starter): $7/month
+#    - Total: ~$14/month (using your existing database = $0)
 #
 # 5. DATABASE NETWORK ACCESS:
 #    Make sure your existing PostgreSQL database allows connections from:
@@ -174,5 +174,5 @@ services:
 # NOTES:
 # - You're using your existing PostgreSQL database (no additional cost!)
 # - Plans can be upgraded later if you need more resources
-# - Services include 256MB RAM, 0.1 CPU
-# - Free tier is available but has limitations for web services
+# - Starter plan includes: 512MB RAM, 0.1 CPU
+# - Free tier is available but has limitations (sleeps after 15min inactivity)
