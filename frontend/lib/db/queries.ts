@@ -1,5 +1,5 @@
 import 'server-only';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 
 import {
   and,
@@ -566,8 +566,6 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
 }
 
 // ================= CACHE FUNCTIONS =================
-
-import { createHash } from 'crypto';
 
 export function createQuestionHash(question: string): string {
   return createHash('sha256').update(question.trim().toLowerCase()).digest('hex');

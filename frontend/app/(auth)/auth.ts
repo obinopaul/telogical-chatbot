@@ -186,7 +186,7 @@ export const {
       if (session.user) {
         console.log('📋 POSTGRESQL-AUTH: Session callback for:', session.user.email);
         session.user.id = token.id as string;
-        session.user.type = token.type;
+        session.user.type = token.type as "regular" | "credentials";
       }
       return session;
     },
