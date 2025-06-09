@@ -9,36 +9,38 @@
 # 5. Render will create all services automatically
 # 6. Set the secret environment variables in each service dashboard
 
-databases:
-  - name: telogical-database
-    databaseName: telogical_prod
-    user: telogical_user
-    plan: starter
-    region: oregon
-
 services:
 
   # Backend Service (Python FastAPI)
   - type: web
     name: telogical-backend
-    env: docker
-    plan: starter
+    runtime: docker
+    plan: basic-256mb
     region: oregon
     dockerfilePath: ./docker/Dockerfile.backend
+    healthCheckPath: /health
     envVars:
-      # Database Connection
+      # Database Connection (using your existing PostgreSQL)
       - key: DATABASE_TYPE
         value: postgres
       - key: POSTGRES_URL
-        fromDatabase:
-          name: telogical-database
-          property: connectionString
+        sync: false
+      - key: POSTGRES_HOST
+        sync: false
+      - key: POSTGRES_PORT
+        value: 5432
+      - key: POSTGRES_DB
+        sync: false
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
       
       # Server Configuration
       - key: HOST
         value: 0.0.0.0
       - key: PORT
-        value: 10000
+        value: 8080
       - key: MODE
         value: production
       
@@ -87,8 +89,8 @@ services:
   # Frontend Service (Next.js)
   - type: web
     name: telogical-frontend
-    env: docker
-    plan: starter
+    runtime: docker
+    plan: basic-256mb
     region: oregon
     dockerfilePath: ./docker/Dockerfile.frontend
     envVars:
@@ -104,11 +106,9 @@ services:
       - key: TELOGICAL_API_URL
         sync: false
       
-      # Database Connection
+      # Database Connection (using your existing PostgreSQL)
       - key: POSTGRES_URL
-        fromDatabase:
-          name: telogical-database
-          property: connectionString
+        sync: false
       
       # Google OAuth (MUST be set manually in Render dashboard)
       - key: GOOGLE_CLIENT_ID
@@ -120,25 +120,59 @@ services:
       - key: NODE_ENV
         value: production
 
-# After deployment, manually set these environment variables in Render Dashboard:
-# 
-# Backend Service:
-# - OPENAI_API_KEY: your-openai-api-key
-# - ANTHROPIC_API_KEY: your-anthropic-api-key  
-# - AZURE_OPENAI_API_KEY: your-azure-openai-api-key
-# - AZURE_OPENAI_ENDPOINT: https://your-resource.openai.azure.com/
-# - AZURE_OPENAI_DEPLOYMENT_MAP: {"gpt-4o": "your-deployment-name"}
-# - TELOGICAL_AUTH_TOKEN: your-telogical-auth-token
-# - TELOGICAL_AUTH_TOKEN_2: your-telogical-auth-token-2
-# - LANGCHAIN_API_KEY: your-langsmith-api-key (optional)
+# =============================================================================
+# POST-DEPLOYMENT CONFIGURATION GUIDE
+# =============================================================================
+# After blueprint deployment, manually configure these environment variables:
 #
-# Frontend Service:
-# - NEXTAUTH_URL: https://telogical-frontend.onrender.com (your frontend URL)
-# - TELOGICAL_API_URL: https://telogical-backend.onrender.com (your backend URL)
-# - GOOGLE_CLIENT_ID: your-google-oauth-client-id
-# - GOOGLE_CLIENT_SECRET: your-google-oauth-client-secret
+# 1. BACKEND SERVICE (telogical-backend):
+#    Go to: Render Dashboard > telogical-backend > Environment
+#    Add these variables:
+#    
+#    DATABASE (your existing PostgreSQL):
+#    - POSTGRES_URL: postgres://user:password@your-host:5432/database
+#    - POSTGRES_HOST: your-postgres-host
+#    - POSTGRES_DB: your-database-name
+#    - POSTGRES_USER: your-username
+#    - POSTGRES_PASSWORD: your-password
+#    
+#    AI API KEYS:
+#    - OPENAI_API_KEY: your-openai-api-key
+#    - ANTHROPIC_API_KEY: your-anthropic-api-key  
+#    - AZURE_OPENAI_API_KEY: your-azure-openai-api-key
+#    - AZURE_OPENAI_ENDPOINT: https://your-resource.openai.azure.com/
+#    - AZURE_OPENAI_DEPLOYMENT_MAP: {"gpt-4o": "your-deployment-name"}
+#    - TELOGICAL_AUTH_TOKEN: your-telogical-auth-token
+#    - TELOGICAL_AUTH_TOKEN_2: your-telogical-auth-token-2
+#    - LANGCHAIN_API_KEY: your-langsmith-api-key (optional)
 #
-# IMPORTANT: After deployment, get the actual URLs from Render dashboard and update:
-# - NEXTAUTH_URL with your frontend service URL
-# - TELOGICAL_API_URL with your backend service URL
-# - Update Google OAuth settings with your Render URLs!
+# 2. FRONTEND SERVICE (telogical-frontend):
+#    Go to: Render Dashboard > telogical-frontend > Environment
+#    Add these variables:
+#    - POSTGRES_URL: postgres://user:password@your-host:5432/database (same as backend)
+#    - NEXTAUTH_URL: https://telogical-frontend-XXXX.onrender.com (get from service URL)
+#    - TELOGICAL_API_URL: https://telogical-backend-XXXX.onrender.com (get from service URL)
+#    - GOOGLE_CLIENT_ID: your-google-oauth-client-id
+#    - GOOGLE_CLIENT_SECRET: your-google-oauth-client-secret
+#
+# 3. UPDATE GOOGLE OAUTH SETTINGS:
+#    Go to: Google Cloud Console > APIs & Services > Credentials
+#    Update OAuth client with your Render URLs:
+#    - Authorized origins: https://telogical-frontend-XXXX.onrender.com
+#    - Redirect URIs: https://telogical-frontend-XXXX.onrender.com/api/auth/callback/google
+#
+# 4. COST ESTIMATE:
+#    - Backend service (basic-256mb): $6/month  
+#    - Frontend service (basic-256mb): $6/month
+#    - Total: ~$12/month (using your existing database = $0)
+#
+# 5. DATABASE NETWORK ACCESS:
+#    Make sure your existing PostgreSQL database allows connections from:
+#    - Render's IP ranges (check Render docs for current IPs)
+#    - Or use connection strings with SSL/TLS if required
+#
+# NOTES:
+# - You're using your existing PostgreSQL database (no additional cost!)
+# - Plans can be upgraded later if you need more resources
+# - Services include 256MB RAM, 0.1 CPU
+# - Free tier is available but has limitations for web services
