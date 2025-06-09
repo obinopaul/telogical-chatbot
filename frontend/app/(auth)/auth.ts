@@ -187,3 +187,5 @@ export const {
   },
   secret: process.env.NEXTAUTH_SECRET,
 });
+
+export type UserType = 'guest' | 'regular' | 'credentials';
