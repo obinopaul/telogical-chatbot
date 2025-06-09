@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     if (!chat) {
       // Extract user question for title generation
       const userQuestion = Array.isArray(message.parts) ? 
-        message.parts.map(p => p.text || p).join('') : 
+        message.parts.map((p: any) => p.text || p).join('') : 
         message.content;
       
       // Generate title from first user message (max 50 characters)
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
     // Extract user question for cache checking
     const userQuestion = Array.isArray(message.parts) ? 
-      message.parts.map(p => p.text || p).join('') : 
+      message.parts.map((p: any) => p.text || p).join('') : 
       message.content;
 
     // ======= CACHE CHECK =======
@@ -149,7 +149,7 @@ export async function POST(request: Request) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: Array.isArray(message.parts) ? message.parts.map(p => p.text || p).join('') : message.content,
+            message: Array.isArray(message.parts) ? message.parts.map((p: any) => p.text || p).join('') : message.content,
             agent_config: {
               message_history: backendMessages.slice(0, -1),
               show_reasoning: true
