@@ -11,22 +11,14 @@ RUN npm install --legacy-peer-deps --no-fund --no-audit
 # Copy frontend code
 COPY frontend/ ./
 
-# Copy the mock auth file
-COPY docker/mock-auth.ts ./app/\(auth\)/auth.ts
-
 # Create .env.local with required environment variables
 RUN touch .env.local && \
     echo "USE_TELOGICAL_BACKEND=true" >> .env.local && \
     echo "TELOGICAL_API_URL=http://backend:8081" >> .env.local && \
-    echo "AUTH_SECRET=random_secret_string_here" >> .env.local && \
-    echo "SKIP_DB_MIGRATION=true" >> .env.local && \
-    echo "SKIP_AUTH_SETUP=true" >> .env.local
+    echo "AUTH_SECRET=random_secret_string_here" >> .env.local
 
 # Modify package.json to skip DB migration during build
 RUN sed -i 's/"build": "tsx lib\/db\/migrate && next build"/"build": "next build"/g' package.json
-
-# Add uuid package for mock auth
-RUN npm install uuid @types/uuid --save
 
 # Build the Next.js app
 RUN npm run build
