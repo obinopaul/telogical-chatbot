@@ -24,6 +24,14 @@ interface TelogicalStreamResult {
  */
 function createTelogicalLanguageModel(agent: string = 'telogical-assistant') {
   return {
+    // Required LanguageModelV1 properties
+    specificationVersion: 'v1',
+    provider: 'telogical',
+    modelId: agent,
+    defaultObjectGenerationMode: 'json' as const,
+    supportsImageInput: false,
+    supportsObjectGeneration: false,
+    
     // Non-streaming call implementation
     async invoke({ messages }: { messages: Message[] }) {
       const response = await callTelogicalAPI(messages, { agent });

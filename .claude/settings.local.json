@@ -17,7 +17,9 @@
       "Bash(docker-compose:*)",
       "Bash(npm run dev:*)",
       "Bash(npm install)",
-      "WebFetch(domain:render.com)"
+      "WebFetch(domain:render.com)",
+      "Bash(npx next build:*)",
+      "Bash(npx tsc:*)"
     ]
   },
   "enableAllProjectMcpServers": false
