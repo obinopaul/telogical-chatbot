@@ -50,6 +50,7 @@ export const login = async (
       email: validatedData.email,
       password: validatedData.password,
       redirect: false,
+      redirectTo: '/',
     });
 
     console.log('📊 Login result:', result);
@@ -140,6 +141,7 @@ export const register = async (
       email: validatedData.email,
       password: validatedData.password,
       redirect: false,
+      redirectTo: '/',
     });
 
     console.log('📊 Auto sign-in result:', result);
