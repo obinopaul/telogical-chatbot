@@ -1,59 +1,12 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import NextAuth from 'next-auth';
+import { authConfig } from './app/(auth)/auth.config';
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  /*
-   * Playwright starts the dev server and requires a 200 status to
-   * begin the tests, so this ensures that the tests can start
-   */
-  if (pathname.startsWith('/ping')) {
-    return new Response('pong', { status: 200 });
-  }
-
-  // Allow auth API routes
-  if (pathname.startsWith('/api/auth')) {
-    return NextResponse.next();
-  }
-
-  // Allow login page
-  if (pathname === '/login') {
-    return NextResponse.next();
-  }
-
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
-  // If no token (not authenticated), redirect to login
-  if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // If authenticated and trying to access login, redirect to home
-  if (token && pathname === '/login') {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
-  return NextResponse.next();
-}
+// The middleware is now just a re-export of the configured auth object.
+// The logic inside auth.config.ts will handle all the routing protection.
+export default NextAuth(authConfig).auth;
 
 export const config = {
-  matcher: [
-    '/',
-    '/chat/:id',
-    '/api/:path*',
-    '/login',
-    '/register',
-
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
-  ],
+  // This matcher ensures the middleware runs on all paths
+  // except for static files and Next.js internals.
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

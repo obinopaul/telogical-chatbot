@@ -1,5 +1,8 @@
 import type { NextAuthConfig } from 'next-auth';
 
+// The default redirect path after a user logs in
+export const DEFAULT_LOGIN_REDIRECT = '/';
+
 export const authConfig = {
   pages: {
     signIn: '/login',
