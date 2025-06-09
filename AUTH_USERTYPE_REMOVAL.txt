@@ -1,0 +1,5 @@
+// In your frontend/app/(auth)/auth.ts file
+// REMOVE this line at the end:
+export type UserType = 'regular' | 'credentials';
+
+// The UserType is now defined in lib/types/auth.ts and lib/db/schema.ts
