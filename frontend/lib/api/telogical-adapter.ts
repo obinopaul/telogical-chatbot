@@ -8,6 +8,16 @@
 import { type Message } from 'ai';
 import { env } from 'process';
 
+/**
+ * Extended Message type that includes optional attachments
+ */
+type MessageWithAttachments = Message & {
+  attachments?: Array<{
+    contentType: string;
+    data: string;
+  }>;
+};
+
 // Backend API endpoint - can be configured in .env
 const API_BASE_URL = process.env.TELOGICAL_API_URL || 'http://localhost:8081';
 const DEFAULT_AGENT = 'telogical-assistant';
@@ -16,13 +26,20 @@ const DEFAULT_AGENT = 'telogical-assistant';
  * Converts frontend Message format to Telogical backend ChatMessage format
  */
 export function convertToTelogicalFormat(messages: Message[]) {
-  return messages.map(msg => ({
-    type: msg.role === 'user' ? 'human' : 'ai',
-    content: msg.content,
-    id: msg.id,
-    // Include attachments if available
-    ...(msg.attachments ? { attachments: msg.attachments } : {})
-  }));
+  return messages.map((msg: Message) => {
+    // Use proper type assertion to extend the base Message type
+    const messageWithAttachments = msg as MessageWithAttachments;
+    
+    return {
+      type: msg.role === 'user' ? 'human' : 'ai',
+      content: msg.content,
+      id: msg.id,
+      // Include attachments if available using the properly typed variable
+      ...(messageWithAttachments.attachments 
+        ? { attachments: messageWithAttachments.attachments } 
+        : {})
+    };
+  });
 }
 
 /**
@@ -50,7 +67,8 @@ export async function callTelogicalAPI(
   const telogicalMessages = convertToTelogicalFormat(messages);
   
   // Extract the last user message
-  const lastUserMessage = messages.findLast(msg => msg.role === 'user');
+  const userMessages = messages.filter(msg => msg.role === 'user');
+  const lastUserMessage = userMessages[userMessages.length - 1];
   
   if (!lastUserMessage) {
     throw new Error('No user message found');
