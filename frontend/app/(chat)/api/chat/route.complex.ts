@@ -240,7 +240,7 @@ export async function POST(request: Request) {
     }
     
     console.error('Unexpected error in chat route:', error);
-    return new ChatSDKError('internal_server_error:api', 'An unexpected error occurred').toResponse();
+    return new ChatSDKError('offline:api', 'An unexpected error occurred').toResponse();
   }
 }
 

@@ -297,7 +297,7 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Chat route error:', error);
-    return new ChatSDKError('internal_server_error:api', 'Backend connection failed').toResponse();
+    return new ChatSDKError('offline:api', 'Backend connection failed').toResponse();
   }
 }
 
