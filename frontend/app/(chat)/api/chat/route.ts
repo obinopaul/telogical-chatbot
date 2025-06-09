@@ -147,7 +147,11 @@ export async function POST(request: Request) {
         const backendUrl = process.env.TELOGICAL_API_URL || 'http://backend:8081';
         const backendResponse = await fetch(`${backendUrl}/telogical-assistant/stream`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            // Add authorization header to authenticate with the backend
+            'Authorization': `Bearer ${process.env.TELOGICAL_API_SECRET}`
+          },
           body: JSON.stringify({
             message: Array.isArray(message.parts) ? message.parts.map((p: any) => p.text || p).join('') : message.content,
             agent_config: {
