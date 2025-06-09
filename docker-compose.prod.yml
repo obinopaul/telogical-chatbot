@@ -53,6 +53,7 @@ services:
       - frontend/.env.local
     environment:
       - NODE_ENV=production
+      - TELOGICAL_API_SECRET=${TELOGICAL_API_SECRET}
     depends_on:
       backend:
         condition: service_healthy

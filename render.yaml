@@ -105,6 +105,8 @@ services:
         value: true
       - key: TELOGICAL_API_URL
         sync: false
+      - key: TELOGICAL_API_SECRET
+        sync: false
       
       # Database Connection (using your existing PostgreSQL)
       - key: POSTGRES_URL
@@ -152,6 +154,7 @@ services:
 #    - POSTGRES_URL: postgres://user:password@your-host:5432/database (same as backend)
 #    - NEXTAUTH_URL: https://telogical-frontend-XXXX.onrender.com (get from service URL)
 #    - TELOGICAL_API_URL: https://telogical-backend-XXXX.onrender.com (get from service URL)
+#    - TELOGICAL_API_SECRET: your-backend-api-secret-here (must match backend)
 #    - GOOGLE_CLIENT_ID: your-google-oauth-client-id
 #    - GOOGLE_CLIENT_SECRET: your-google-oauth-client-secret
 #

@@ -8,6 +8,7 @@ NEXTAUTH_URL=https://telogical-frontend.eastus.azurecontainer.io:3000
 # Backend Connection (will be auto-updated by deployment script)
 USE_TELOGICAL_BACKEND=true
 TELOGICAL_API_URL=https://telogical-backend.eastus.azurecontainer.io:8081
+TELOGICAL_API_SECRET=your-backend-api-secret-here
 
 # Database Connection
 POSTGRES_URL=postgres://telogical_admin:YourSecurePassword123!@telogical-postgres.postgres.database.azure.com:5432/telogical_prod?sslmode=require

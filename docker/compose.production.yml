@@ -54,6 +54,7 @@ services:
       # Backend connection
       - USE_TELOGICAL_BACKEND=true
       - TELOGICAL_API_URL=${TELOGICAL_API_URL:-http://backend:8081}
+      - TELOGICAL_API_SECRET=${TELOGICAL_API_SECRET}
       
       # Database
       - POSTGRES_URL=${POSTGRES_URL}
