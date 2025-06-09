@@ -54,7 +54,7 @@ export const {
           const users = await db
             .select()
             .from(user)  // This is the "User" table in PostgreSQL
-            .where(eq(user.email, credentials.email));
+            .where(eq(user.email, credentials.email as string));
 
           console.log('📊 POSTGRESQL-AUTH: Query result - found', users.length, 'users');
 
@@ -77,7 +77,7 @@ export const {
           }
 
           // Verify password using SAME method as registration
-          const isValidPassword = verifyPassword(credentials.password, dbUser.password);
+          const isValidPassword = verifyPassword(credentials.password as string, dbUser.password);
           
           if (!isValidPassword) {
             console.log('❌ POSTGRESQL-AUTH: Invalid password for:', credentials.email);
@@ -169,15 +169,15 @@ export const {
           token.id = authUser.id;
         }
         
-        token.type = authUser.type || account?.provider || 'google';
+        token.type = (authUser as any).type || account?.provider || 'google';
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         console.log('📋 POSTGRESQL-AUTH: Session callback for:', session.user.email);
-        session.user.id = token.id as string;
-        session.user.type = token.type as string;
+        (session.user as any).id = token.id as string;
+        (session.user as any).type = token.type as string;
       }
       return session;
     },
