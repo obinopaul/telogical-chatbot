@@ -1,4 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm';
+import { pgEnum } from 'drizzle-orm/pg-core';
 import {
   pgTable,
   varchar,
@@ -11,12 +12,15 @@ import {
   boolean,
 } from 'drizzle-orm/pg-core';
 
+export const userTypeEnum = pgEnum('user_type', ['regular', 'credentials']);
+
 export const user = pgTable('User', {
   id: varchar('id').primaryKey().notNull(), // Google OAuth ID
   email: varchar('email', { length: 128 }).notNull().unique(),
   password: varchar('password', { length: 64 }), // Nullable for OAuth users
   name: varchar('name', { length: 128 }), // Google display name
   image: text('image'), // Google profile picture
+  type: userTypeEnum('type').default('regular').notNull(), // ADD THIS LINE
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -155,3 +159,5 @@ export const queryCache = pgTable('QueryCache', {
 });
 
 export type QueryCache = InferSelectModel<typeof queryCache>;
+
+export type UserType = 'regular' | 'credentials';
