@@ -1,15 +1,15 @@
 import type { InferSelectModel } from 'drizzle-orm';
-import { pgEnum } from 'drizzle-orm/pg-core';
 import {
-  pgTable,
-  varchar,
-  timestamp,
-  json,
-  uuid,
-  text,
-  primaryKey,
-  foreignKey,
   boolean,
+  foreignKey,
+  json,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+  varchar,
 } from 'drizzle-orm/pg-core';
 
 export const userTypeEnum = pgEnum('user_type', ['regular', 'credentials']);
@@ -160,4 +160,5 @@ export const queryCache = pgTable('QueryCache', {
 
 export type QueryCache = InferSelectModel<typeof queryCache>;
 
-export type UserType = 'regular' | 'credentials';
+// Derive UserType from the enum to ensure they stay in sync
+export type UserType = (typeof userTypeEnum.enumValues)[number];
