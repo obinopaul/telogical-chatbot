@@ -1,0 +1,6 @@
+// In your frontend/app/(auth)/auth.ts file
+// Change the last line from:
+export type UserType = 'guest' | 'regular' | 'credentials';
+
+// To:
+export type UserType = 'regular' | 'credentials';

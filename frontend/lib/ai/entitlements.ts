@@ -8,15 +8,7 @@ interface Entitlements {
 
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
   /*
-   * For users without an account
-   */
-  guest: {
-    maxMessagesPerDay: 20,
-    availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
-  },
-
-  /*
-   * For users with an account
+   * For users with Google OAuth account
    */
   regular: {
     maxMessagesPerDay: 100,
@@ -24,7 +16,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
   },
 
   /*
-   * For users authenticated with credentials (database users)
+   * For users authenticated with email/password (database users)
    */
   credentials: {
     maxMessagesPerDay: 100,
