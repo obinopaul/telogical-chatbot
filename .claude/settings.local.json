@@ -20,7 +20,8 @@
       "WebFetch(domain:render.com)",
       "Bash(npx next build:*)",
       "Bash(npx tsc:*)",
-      "Bash(timeout 30 npx tsc --noEmit --skipLibCheck)"
+      "Bash(timeout 30 npx tsc --noEmit --skipLibCheck)",
+      "Bash(timeout 20 npx next build --no-lint)"
     ]
   },
   "enableAllProjectMcpServers": false
