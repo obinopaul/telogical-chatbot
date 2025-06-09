@@ -19,7 +19,8 @@
       "Bash(npm install)",
       "WebFetch(domain:render.com)",
       "Bash(npx next build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(timeout 30 npx tsc --noEmit --skipLibCheck)"
     ]
   },
   "enableAllProjectMcpServers": false

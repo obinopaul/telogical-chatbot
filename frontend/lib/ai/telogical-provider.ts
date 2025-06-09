@@ -8,7 +8,7 @@
 import { customProvider } from 'ai';
 import { callTelogicalAPI, processTelogicalStream } from '../api/telogical-adapter';
 import { type Message } from 'ai';
-import type { LanguageModelV1, LanguageModelV1FinishReason } from '@ai-sdk/provider';
+import type { LanguageModelV1, LanguageModelV1FinishReason, LanguageModelV1StreamPart } from '@ai-sdk/provider';
 
 interface TelogicalStreamResult {
   type: 'token' | 'reasoning' | 'tool' | 'message';
@@ -30,7 +30,7 @@ function createTelogicalLanguageModel(agent: string = 'telogical-assistant'): La
     provider: 'telogical',
     modelId: agent,
     defaultObjectGenerationMode: 'json',
-    supportsImageInput: false,
+    supportsImageUrls: false,
     
     // Required LanguageModelV1 core methods
     async doGenerate(options) {
@@ -39,33 +39,21 @@ function createTelogicalLanguageModel(agent: string = 'telogical-assistant'): La
         ? options.prompt.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')
         : options.prompt;
       
-      const requestPayload = [{ role: 'user', content: prompt }];
+      const requestPayload = [{ id: Date.now().toString(), role: 'user' as const, content: prompt }];
       const response = await callTelogicalAPI(requestPayload, { agent });
       const data = await response.json();
       
+      // Return minimal required structure for LanguageModelV1
       return {
         text: data.content || '',
-        toolCalls: [],
-        toolResults: [],
         finishReason: 'stop' as LanguageModelV1FinishReason,
         usage: {
           promptTokens: Math.ceil(prompt.length / 4),
           completionTokens: Math.ceil((data.content || '').length / 4)
         },
-        warnings: undefined,
         rawCall: {
           rawPrompt: prompt,
-          rawSettings: { agent },
-          requestBodyValues: requestPayload
-        },
-        logprobs: undefined,
-        reasoning: undefined,
-        request: {
-          body: JSON.stringify(requestPayload)
-        },
-        response: {
-          headers: response.headers ? Object.fromEntries(response.headers.entries()) : {},
-          body: JSON.stringify(data)
+          rawSettings: { agent }
         }
       };
     },
@@ -76,50 +64,54 @@ function createTelogicalLanguageModel(agent: string = 'telogical-assistant'): La
         ? options.prompt.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')
         : options.prompt;
       
-      const requestPayload = [{ role: 'user', content: prompt }];
+      const requestPayload = [{ id: Date.now().toString(), role: 'user' as const, content: prompt }];
       
-      const streamGen = async function* () {
-        let responseText = '';
-        
-        const response = await callTelogicalAPI(requestPayload, { 
-          stream: true, 
-          agent 
-        });
-        
-        const streamGenerator = processTelogicalStream(response);
-        
-        for await (const item of streamGenerator) {
-          const result = item as TelogicalStreamResult;
+      // Create ReadableStream instead of AsyncGenerator
+      const stream = new ReadableStream<LanguageModelV1StreamPart>({
+        async start(controller) {
+          let responseText = '';
           
-          // Process tokens (text content)
-          if (result.type === 'token' && result.token) {
-            responseText += result.token;
-            yield {
-              type: 'text-delta',
-              textDelta: result.token
-            };
+          try {
+            const response = await callTelogicalAPI(requestPayload, { 
+              stream: true, 
+              agent 
+            });
+            
+            const streamGenerator = processTelogicalStream(response);
+            
+            for await (const item of streamGenerator) {
+              const result = item as TelogicalStreamResult;
+              
+              // Process tokens (text content)
+              if (result.type === 'token' && result.token) {
+                responseText += result.token;
+                controller.enqueue({
+                  type: 'text-delta',
+                  textDelta: result.token
+                });
+              }
+            }
+            
+            // Final completion
+            controller.enqueue({
+              type: 'finish',
+              finishReason: 'stop' as LanguageModelV1FinishReason,
+              usage: { 
+                promptTokens: Math.ceil(prompt.length / 4), 
+                completionTokens: Math.ceil(responseText.length / 4)
+              },
+              logprobs: undefined
+            });
+            
+            controller.close();
+          } catch (error) {
+            controller.error(error);
           }
         }
-        
-        // Final completion
-        yield {
-          type: 'finish',
-          finishReason: 'stop' as LanguageModelV1FinishReason,
-          usage: { 
-            promptTokens: Math.ceil(prompt.length / 4), 
-            completionTokens: Math.ceil(responseText.length / 4)
-          },
-          logprobs: undefined,
-          rawCall: {
-            rawPrompt: prompt,
-            rawSettings: { agent },
-            requestBodyValues: requestPayload
-          }
-        };
-      };
+      });
       
       return {
-        stream: streamGen(),
+        stream,
         warnings: undefined,
         rawCall: {
           rawPrompt: prompt,
