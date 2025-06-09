@@ -173,7 +173,7 @@ export const {
             console.error('💥 POSTGRESQL-AUTH: Error fetching user for JWT:', error);
             token.type = 'regular'; // fallback
           }
-        } else {
+        } else if (authUser?.id) {
           // For credentials login, authUser already has the type from authorize()
           token.id = authUser.id;
           token.type = authUser.type || 'credentials';
