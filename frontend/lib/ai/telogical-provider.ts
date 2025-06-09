@@ -8,6 +8,7 @@
 import { customProvider } from 'ai';
 import { callTelogicalAPI, processTelogicalStream } from '../api/telogical-adapter';
 import { type Message } from 'ai';
+import type { LanguageModelV1, LanguageModelV1FinishReason } from '@ai-sdk/provider';
 
 interface TelogicalStreamResult {
   type: 'token' | 'reasoning' | 'tool' | 'message';
@@ -22,127 +23,80 @@ interface TelogicalStreamResult {
 /**
  * Creates a language model that interfaces with the Telogical backend
  */
-function createTelogicalLanguageModel(agent: string = 'telogical-assistant') {
+function createTelogicalLanguageModel(agent: string = 'telogical-assistant'): LanguageModelV1 {
   return {
-    // Required LanguageModelV1 properties
+    // Required LanguageModelV1 metadata properties
     specificationVersion: 'v1',
     provider: 'telogical',
     modelId: agent,
-    defaultObjectGenerationMode: 'json' as const,
+    defaultObjectGenerationMode: 'json',
     supportsImageInput: false,
-    supportsObjectGeneration: false,
     
-    // Non-streaming call implementation
-    async invoke({ messages }: { messages: Message[] }) {
-      const response = await callTelogicalAPI(messages, { agent });
+    // Required LanguageModelV1 core methods
+    async doGenerate(options) {
+      // Convert messages to prompt string for our API
+      const prompt = Array.isArray(options.prompt) 
+        ? options.prompt.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')
+        : options.prompt;
+      
+      const response = await callTelogicalAPI([{ role: 'user', content: prompt }], { agent });
       const data = await response.json();
       
       return {
-        messages: [
-          ...messages,
-          {
-            id: data.id || Date.now().toString(),
-            role: 'assistant',
-            content: data.content
-          }
-        ],
-        usage: data.usage || null,
-        data: data.custom_data || {}
+        text: data.content || '',
+        usage: {
+          promptTokens: prompt.length / 4, // rough estimate
+          completionTokens: (data.content || '').length / 4
+        },
+        finishReason: 'stop' as LanguageModelV1FinishReason,
+        warnings: undefined
       };
     },
     
-    // Streaming call implementation
-    async *stream({ messages }: { messages: Message[] }) {
-      let responseText = '';
-      let reasoning = '';
-      let toolCalls: any[] = [];
+    async doStream(options) {
+      // Convert messages to prompt string for our API
+      const prompt = Array.isArray(options.prompt) 
+        ? options.prompt.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')
+        : options.prompt;
       
-      const response = await callTelogicalAPI(messages, { 
-        stream: true, 
-        agent 
-      });
-      
-      const streamGenerator = processTelogicalStream(response);
-      
-      for await (const item of streamGenerator) {
-        const result = item as TelogicalStreamResult;
+      const streamGen = async function* () {
+        let responseText = '';
         
-        // Process tokens (text content)
-        if (result.type === 'token' && result.token) {
-          responseText += result.token;
-          yield {
-            messages: [
-              ...messages,
-              {
-                id: Date.now().toString(),
-                role: 'assistant',
-                content: responseText
-              }
-            ],
-            usage: null,
-            data: {
-              reasoning,
-              toolCalls
-            }
-          };
-        } 
-        // Process reasoning information
-        else if (result.type === 'reasoning' && result.content) {
-          reasoning = result.content;
-          yield {
-            messages: [
-              ...messages,
-              {
-                id: Date.now().toString(),
-                role: 'assistant',
-                content: responseText
-              }
-            ],
-            usage: null,
-            data: {
-              reasoning,
-              toolCalls
-            }
-          };
-        } 
-        // Process tool call information
-        else if (result.type === 'tool' && result.name) {
-          toolCalls.push({
-            name: result.name,
-            input: result.input || '',
-            output: result.output || ''
-          });
-          yield {
-            messages: [
-              ...messages,
-              {
-                id: Date.now().toString(),
-                role: 'assistant',
-                content: responseText
-              }
-            ],
-            usage: null,
-            data: {
-              reasoning,
-              toolCalls
-            }
-          };
+        const response = await callTelogicalAPI([{ role: 'user', content: prompt }], { 
+          stream: true, 
+          agent 
+        });
+        
+        const streamGenerator = processTelogicalStream(response);
+        
+        for await (const item of streamGenerator) {
+          const result = item as TelogicalStreamResult;
+          
+          // Process tokens (text content)
+          if (result.type === 'token' && result.token) {
+            responseText += result.token;
+            yield {
+              type: 'text-delta',
+              textDelta: result.token
+            };
+          }
         }
-        // Process complete message (if any)
-        else if (result.type === 'message' && result.message) {
-          yield {
-            messages: [
-              ...messages,
-              result.message
-            ],
-            usage: null,
-            data: {
-              reasoning,
-              toolCalls
-            }
-          };
-        }
-      }
+        
+        // Final completion
+        yield {
+          type: 'finish',
+          finishReason: 'stop' as LanguageModelV1FinishReason,
+          usage: { 
+            promptTokens: prompt.length / 4, 
+            completionTokens: responseText.length / 4 
+          }
+        };
+      };
+      
+      return {
+        stream: streamGen(),
+        warnings: undefined
+      };
     }
   };
 }
