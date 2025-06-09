@@ -40,7 +40,7 @@ services:
       - key: HOST
         value: 0.0.0.0
       - key: PORT
-        value: 8080
+        value: 8081
       - key: MODE
         value: production
       
@@ -68,11 +68,11 @@ services:
       - key: TELOGICAL_LOCALE
         value: us-en
       
-      # Data Files
+      # Data Files (just filenames, not paths - code will prepend data/ directory)
       - key: ZIP_CODE_CSV_PATH
-        value: data/geo-data.csv
+        value: geo-data.csv
       - key: DMA_CSV_PATH
-        value: data/DMAs.csv
+        value: DMAs.csv
       
       # Security
       - key: AUTH_SECRET

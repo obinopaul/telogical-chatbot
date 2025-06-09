@@ -33,7 +33,7 @@ export default function DebugAuth() {
         
         <div className="bg-yellow-100 p-4 rounded">
           <h2 className="font-semibold mb-2">Check Browser Console for errors!</h2>
-          <p className="text-sm">Open DevTools and look for any JavaScript errors when clicking "Continue with Google"</p>
+          <p className="text-sm">Open DevTools and look for any JavaScript errors when clicking &quot;Continue with Google&quot;</p>
         </div>
       </div>
     </div>
