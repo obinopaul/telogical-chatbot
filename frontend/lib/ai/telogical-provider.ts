@@ -39,17 +39,34 @@ function createTelogicalLanguageModel(agent: string = 'telogical-assistant'): La
         ? options.prompt.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')
         : options.prompt;
       
-      const response = await callTelogicalAPI([{ role: 'user', content: prompt }], { agent });
+      const requestPayload = [{ role: 'user', content: prompt }];
+      const response = await callTelogicalAPI(requestPayload, { agent });
       const data = await response.json();
       
       return {
         text: data.content || '',
-        usage: {
-          promptTokens: prompt.length / 4, // rough estimate
-          completionTokens: (data.content || '').length / 4
-        },
+        toolCalls: [],
+        toolResults: [],
         finishReason: 'stop' as LanguageModelV1FinishReason,
-        warnings: undefined
+        usage: {
+          promptTokens: Math.ceil(prompt.length / 4),
+          completionTokens: Math.ceil((data.content || '').length / 4)
+        },
+        warnings: undefined,
+        rawCall: {
+          rawPrompt: prompt,
+          rawSettings: { agent },
+          requestBodyValues: requestPayload
+        },
+        logprobs: undefined,
+        reasoning: undefined,
+        request: {
+          body: JSON.stringify(requestPayload)
+        },
+        response: {
+          headers: response.headers ? Object.fromEntries(response.headers.entries()) : {},
+          body: JSON.stringify(data)
+        }
       };
     },
     
@@ -59,10 +76,12 @@ function createTelogicalLanguageModel(agent: string = 'telogical-assistant'): La
         ? options.prompt.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')
         : options.prompt;
       
+      const requestPayload = [{ role: 'user', content: prompt }];
+      
       const streamGen = async function* () {
         let responseText = '';
         
-        const response = await callTelogicalAPI([{ role: 'user', content: prompt }], { 
+        const response = await callTelogicalAPI(requestPayload, { 
           stream: true, 
           agent 
         });
@@ -87,15 +106,26 @@ function createTelogicalLanguageModel(agent: string = 'telogical-assistant'): La
           type: 'finish',
           finishReason: 'stop' as LanguageModelV1FinishReason,
           usage: { 
-            promptTokens: prompt.length / 4, 
-            completionTokens: responseText.length / 4 
+            promptTokens: Math.ceil(prompt.length / 4), 
+            completionTokens: Math.ceil(responseText.length / 4)
+          },
+          logprobs: undefined,
+          rawCall: {
+            rawPrompt: prompt,
+            rawSettings: { agent },
+            requestBodyValues: requestPayload
           }
         };
       };
       
       return {
         stream: streamGen(),
-        warnings: undefined
+        warnings: undefined,
+        rawCall: {
+          rawPrompt: prompt,
+          rawSettings: { agent },
+          requestBodyValues: requestPayload
+        }
       };
     }
   };
