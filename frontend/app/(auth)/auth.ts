@@ -11,12 +11,19 @@ import postgres from 'postgres';
 import { eq } from 'drizzle-orm';
 import { user } from '@/lib/db/schema';
 import { verifyPassword } from '@/lib/password';
+import { z } from 'zod';
 
 // Database connection
 const client = postgres(process.env.POSTGRES_URL!, {
   ssl: { rejectUnauthorized: false }
 });
 const db = drizzle(client);
+
+// Zod schema for credentials validation
+const credentialsSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1)
+});
 
 export const {
   handlers: { GET, POST },
@@ -42,10 +49,15 @@ export const {
       async authorize(credentials) {
         console.log('🔐 POSTGRESQL-AUTH: Attempting credentials login for:', credentials?.email);
         
-        if (!credentials?.email || !credentials?.password) {
-          console.log('❌ POSTGRESQL-AUTH: Missing email or password');
+        // Validate credentials using Zod
+        const parsedCredentials = credentialsSchema.safeParse(credentials);
+        
+        if (!parsedCredentials.success) {
+          console.log('❌ POSTGRESQL-AUTH: Invalid credentials format:', parsedCredentials.error.format());
           return null;
         }
+
+        const { email, password } = parsedCredentials.data;
 
         try {
           console.log('🔍 POSTGRESQL-AUTH: Querying PostgreSQL User table...');
@@ -54,12 +66,12 @@ export const {
           const users = await db
             .select()
             .from(user)  // This is the "User" table in PostgreSQL
-            .where(eq(user.email, credentials.email as string));
+            .where(eq(user.email, email));
 
           console.log('📊 POSTGRESQL-AUTH: Query result - found', users.length, 'users');
 
           if (users.length === 0) {
-            console.log('❌ POSTGRESQL-AUTH: User not found in PostgreSQL:', credentials.email);
+            console.log('❌ POSTGRESQL-AUTH: User not found in PostgreSQL:', email);
             return null;
           }
 
@@ -72,19 +84,19 @@ export const {
           });
 
           if (!dbUser.password) {
-            console.log('❌ POSTGRESQL-AUTH: User has no password (OAuth user?):', credentials.email);
+            console.log('❌ POSTGRESQL-AUTH: User has no password (OAuth user?):', email);
             return null;
           }
 
           // Verify password using SAME method as registration
-          const isValidPassword = verifyPassword(credentials.password as string, dbUser.password);
+          const isValidPassword = verifyPassword(password, dbUser.password);
           
           if (!isValidPassword) {
-            console.log('❌ POSTGRESQL-AUTH: Invalid password for:', credentials.email);
+            console.log('❌ POSTGRESQL-AUTH: Invalid password for:', email);
             return null;
           }
 
-          console.log('✅ POSTGRESQL-AUTH: Password verified! Login successful for:', credentials.email);
+          console.log('✅ POSTGRESQL-AUTH: Password verified! Login successful for:', email);
 
           return {
             id: dbUser.id,
@@ -109,10 +121,15 @@ export const {
       if (account?.provider === 'google') {
         try {
           // Check if Google user exists in database
+          if (!authUser.email) {
+            console.log('❌ POSTGRESQL-AUTH: No email provided for Google user');
+            return false;
+          }
+          
           const existingUsers = await db
             .select()
             .from(user)
-            .where(eq(user.email, authUser.email!));
+            .where(eq(user.email, authUser.email));
 
           if (existingUsers.length === 0) {
             // Create new user for Google OAuth

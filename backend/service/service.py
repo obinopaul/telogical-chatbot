@@ -161,6 +161,9 @@ async def _handle_input(user_input: UserInput, agent: Pregel) -> tuple[dict[str,
                         tool_call_id=msg_data.get("tool_call_id", ""),
                         name=msg_data.get("name", "unknown_tool")
                     ))
+                # Skip system messages - they're not supported in this backend
+                elif msg_data.get("type") == "system" or msg_data.get("role") == "system":
+                    continue
             
             # Prepend history to the current message
             messages = history_messages + messages

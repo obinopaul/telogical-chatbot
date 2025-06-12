@@ -21,7 +21,8 @@
       "Bash(npx next build:*)",
       "Bash(npx tsc:*)",
       "Bash(timeout 30 npx tsc --noEmit --skipLibCheck)",
-      "Bash(timeout 20 npx next build --no-lint)"
+      "Bash(timeout 20 npx next build --no-lint)",
+      "Bash(npm run build:*)"
     ]
   },
   "enableAllProjectMcpServers": false
